@@ -278,9 +278,17 @@
 
         // Firebase Configuration setup from environment
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-math-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-            // Dummy config for local testing if needed
-        };
+  const firebaseConfig = {
+  apiKey: "AIzaSyBhgWYgAcaK2UmAeivCFEA-3GMstVAaqSE",
+  authDomain: "support-8f876.firebaseapp.com",
+  projectId: "support-8f876",
+  storageBucket: "support-8f876.firebasestorage.app",
+  messagingSenderId: "20070208887",
+  appId: "1:20070208887:web:93c07c98361587f8e73d72"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         let app;
