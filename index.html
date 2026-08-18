@@ -3,124 +3,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>長安國小｜六年級數學學習扶助測驗</title>
+    <title>六年級數學學習扶助測驗系統</title>
     
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- 引入日式風格字體 Noto Serif TC (思源宋體) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&display=swap" rel="stylesheet">
-    
     <!-- 引入 Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- Tailwind 日式風格設定 -->
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'wabi-bg': '#F4F1EA',     // 鳥の子色 (背景)
-                        'wabi-main': '#2C3E50',   // 鐵紺 (主文字/邊框)
-                        'wabi-accent': '#C14545', // 臙脂 (強調/錯誤/印章色)
-                        'wabi-green': '#79896D',  // 鶯色 (正確/輔助)
-                    },
-                    fontFamily: {
-                        serif: ['"Noto Serif TC"', 'serif'],
-                    },
-                    boxShadow: {
-                        'wabi': '4px 4px 0px 0px #2C3E50', // 硬邊陰影
-                    }
-                }
-            }
-        }
-    </script>
-
     <style>
-        body { font-family: 'Noto Serif TC', serif; background-color: #F4F1EA; color: #2C3E50; }
-        .stamp {
-            border: 2px solid #C14545;
-            color: #C14545;
-            border-radius: 4px;
-            padding: 2px 8px;
-            font-weight: bold;
-            display: inline-block;
-            transform: rotate(-5deg);
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans TC", sans-serif; 
         }
-        /* 自訂單選框樣式 */
-        input[type="radio"] { accent-color: #2C3E50; }
+        /* 自訂單選框主題色 */
+        input[type="radio"] { accent-color: #2563eb; }
+        
+        /* 載入動畫 */
+        .spinner {
+            border: 3px solid rgba(59, 130, 246, 0.3);
+            border-radius: 50%;
+            border-top-color: #3b82f6;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
-<body class="min-h-screen p-4 md:p-8 flex items-center justify-center">
+<body class="min-h-screen bg-slate-50 text-slate-800 p-4 md:p-8 flex items-center justify-center">
+
+    <!-- 全域 Loading 遮罩 -->
+    <div id="global-loading" class="fixed inset-0 bg-slate-900/50 flex flex-col justify-center items-center z-50 transition-opacity duration-300">
+        <div class="spinner w-12 h-12 mb-4"></div>
+        <p class="text-white font-medium" id="loading-text">系統初始化中...</p>
+    </div>
 
     <!-- 1. 登入介面 -->
-    <div id="login-screen" class="w-full max-w-md bg-white p-8 rounded-sm shadow-wabi border-2 border-wabi-main">
+    <div id="login-screen" class="hidden w-full max-w-md bg-white p-8 rounded-xl shadow-lg border border-slate-100">
         <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold mb-2 tracking-widest">數學能力測驗</h1>
-            <p class="text-wabi-main/70">長安國小 六年級學習扶助</p>
+            <h1 class="text-3xl font-bold mb-2 text-slate-900">數學能力測驗</h1>
+            <p class="text-slate-500">學習扶助線上評量系統</p>
         </div>
         <form id="login-form" class="space-y-6">
             <div>
-                <label class="block mb-2 font-bold tracking-wider">學生姓名</label>
-                <input type="text" id="student-name" required class="w-full border-2 border-wabi-main bg-wabi-bg p-3 rounded-sm focus:outline-none focus:ring-2 focus:ring-wabi-accent" placeholder="請輸入姓名">
+                <label class="block mb-2 font-medium text-slate-700">學生學號或姓名</label>
+                <input type="text" id="student-name" required class="w-full border border-slate-300 bg-slate-50 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow" placeholder="請輸入學號">
+                <p class="text-xs text-slate-500 mt-1">※ 系統將為您建立專屬學習紀錄</p>
             </div>
-            <div>
-                <label class="block mb-2 font-bold tracking-wider">登入密碼</label>
-                <input type="password" id="student-pwd" required class="w-full border-2 border-wabi-main bg-wabi-bg p-3 rounded-sm focus:outline-none focus:ring-2 focus:ring-wabi-accent" placeholder="請輸入密碼">
-            </div>
-            <button type="submit" class="w-full bg-wabi-main text-white font-bold py-3 rounded-sm shadow-wabi hover:bg-wabi-main/90 transition-colors">
-                進入測驗
+            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg shadow-md hover:bg-blue-700 hover:shadow-lg transition-all flex justify-center items-center">
+                <span id="login-btn-text">進入系統</span>
+                <div id="login-spinner" class="spinner w-5 h-5 ml-2 hidden border-2 border-white/30 border-top-white"></div>
             </button>
         </form>
     </div>
 
-    <!-- 2. 測驗介面 -->
-    <div id="quiz-screen" class="hidden w-full max-w-3xl bg-white p-6 md:p-10 rounded-sm shadow-wabi border-2 border-wabi-main">
-        <div class="flex justify-between items-center border-b-2 border-wabi-main pb-4 mb-6">
-            <h2 class="text-2xl font-bold tracking-widest">學習扶助測驗 <span class="stamp ml-2">嚴選</span></h2>
-            <div class="text-lg">考生：<span id="display-name" class="font-bold"></span></div>
+    <!-- 2. 主選單介面 -->
+    <div id="main-menu-screen" class="hidden w-full max-w-3xl space-y-6">
+        <div class="bg-white p-6 rounded-xl shadow-lg border border-slate-100 flex justify-between items-center">
+            <div>
+                <h2 class="text-xl font-bold text-slate-800">歡迎，<span id="menu-user-name" class="text-blue-600"></span></h2>
+                <p class="text-sm text-slate-500">請選擇你要進行的項目</p>
+            </div>
+            <button id="btn-logout" class="text-sm text-slate-500 hover:text-slate-800 border border-slate-200 px-3 py-1 rounded-md hover:bg-slate-50">登出</button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div id="btn-start-quiz" class="bg-white p-8 rounded-xl shadow-md border border-slate-200 hover:border-blue-400 hover:shadow-lg transition-all cursor-pointer text-center group">
+                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                </div>
+                <h3 class="text-xl font-bold text-slate-800 mb-2">開始新測驗</h3>
+                <p class="text-slate-500 text-sm">系統將隨機抽取模擬試題</p>
+            </div>
+
+            <div id="btn-view-history" class="bg-white p-8 rounded-xl shadow-md border border-slate-200 hover:border-emerald-400 hover:shadow-lg transition-all cursor-pointer text-center group">
+                 <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                    <svg class="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                </div>
+                <h3 class="text-xl font-bold text-slate-800 mb-2">查詢歷史成績</h3>
+                <p class="text-slate-500 text-sm">查看過去的測驗紀錄與分析</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. 測驗介面 -->
+    <div id="quiz-screen" class="hidden w-full max-w-3xl bg-white p-6 md:p-10 rounded-xl shadow-lg border border-slate-100">
+        <div class="flex justify-between items-center border-b border-slate-200 pb-4 mb-6">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-900">學習扶助測驗</h2>
+                <p class="text-sm text-slate-500 mt-1">共 <span id="quiz-total-q"></span> 題</p>
+            </div>
+            <button id="btn-cancel-quiz" class="text-sm text-slate-500 hover:text-slate-800">放棄測驗</button>
         </div>
         
-        <div id="quiz-container" class="space-y-8 mb-8">
+        <div id="quiz-container" class="space-y-6 mb-8">
             <!-- 題目會透過 JS 動態產生在這裡 -->
         </div>
 
-        <button id="submit-quiz" class="w-full bg-wabi-accent text-white font-bold py-4 rounded-sm shadow-wabi text-lg tracking-widest hover:bg-red-800 transition-colors">
-            交卷並分析成績
+        <button id="submit-quiz" class="w-full bg-blue-600 text-white font-bold py-4 rounded-lg shadow-md text-lg hover:bg-blue-700 hover:shadow-lg transition-all flex justify-center items-center">
+            <span id="submit-btn-text">交卷並分析成績</span>
+            <div id="submit-spinner" class="spinner w-5 h-5 ml-2 hidden border-2 border-white/30 border-top-white"></div>
         </button>
     </div>
 
-    <!-- 3. 儀表板與分析介面 -->
-    <div id="dashboard-screen" class="hidden w-full max-w-5xl space-y-8">
-        <div class="bg-white p-8 rounded-sm shadow-wabi border-2 border-wabi-main text-center relative">
-            <h2 class="text-3xl font-bold tracking-widest mb-4">測驗分析報告</h2>
-            <div class="text-5xl font-bold text-wabi-accent mb-2" id="final-score">0 分</div>
-            <p class="text-lg">考生：<span id="dash-name" class="font-bold"></span></p>
-            <button id="btn-restart" class="absolute top-8 right-8 border-2 border-wabi-main px-4 py-2 rounded-sm hover:bg-wabi-bg font-bold">
-                重新測驗
+    <!-- 4. 歷史紀錄查詢介面 -->
+    <div id="history-screen" class="hidden w-full max-w-4xl bg-white p-6 md:p-8 rounded-xl shadow-lg border border-slate-100">
+        <div class="flex justify-between items-center border-b border-slate-200 pb-4 mb-6">
+            <h2 class="text-2xl font-bold text-slate-900">歷次測驗紀錄</h2>
+            <button id="btn-history-back" class="text-blue-600 hover:text-blue-800 font-medium px-4 py-2 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                返回主選單
             </button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div id="history-content">
+            <!-- 歷史紀錄列表會呈現在此 -->
+            <div id="history-loading" class="flex flex-col items-center justify-center py-12">
+                <div class="spinner w-10 h-10 mb-4 text-blue-500"></div>
+                <p class="text-slate-500">載入成績紀錄中...</p>
+            </div>
+            
+            <div id="history-empty" class="hidden flex-col items-center justify-center py-12 text-center">
+                 <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                     <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                 </div>
+                 <p class="text-slate-600 font-medium">尚無測驗紀錄</p>
+                 <p class="text-sm text-slate-500 mt-1">請先完成一次測驗後再來查看。</p>
+            </div>
+
+            <div id="history-list-container" class="hidden space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                <!-- Records injected here -->
+            </div>
+        </div>
+    </div>
+
+
+    <!-- 5. 儀表板與分析介面 (單次測驗結果) -->
+    <div id="dashboard-screen" class="hidden w-full max-w-5xl space-y-6">
+        <div class="bg-white p-8 rounded-xl shadow-lg border border-slate-100 text-center relative flex flex-col items-center justify-center">
+            <h2 class="text-2xl font-bold text-slate-700 mb-4">測驗分析報告</h2>
+            <div class="text-6xl font-extrabold text-blue-600 mb-2" id="final-score">0 分</div>
+            <p class="text-slate-500 text-lg mt-2">測驗時間：<span id="dash-date" class="font-medium text-slate-700"></span></p>
+            
+            <div class="mt-6 md:absolute md:top-8 md:right-8 md:mt-0 flex gap-2">
+                <button id="btn-dash-history" class="border border-slate-300 text-slate-600 px-4 py-2 rounded-lg hover:bg-slate-50 hover:text-slate-900 font-medium transition-colors">
+                    查看所有紀錄
+                </button>
+                <button id="btn-dash-home" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium transition-colors shadow-sm">
+                    回主選單
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- 雷達圖：能力分佈 -->
-            <div class="bg-white p-6 rounded-sm shadow-wabi border-2 border-wabi-main flex flex-col items-center">
-                <h3 class="text-xl font-bold mb-4 w-full border-b-2 border-wabi-main pb-2">單元掌握度分析</h3>
+            <div class="bg-white p-6 rounded-xl shadow-lg border border-slate-100 flex flex-col items-center">
+                <h3 class="text-lg font-bold mb-4 w-full border-b border-slate-100 pb-3 text-slate-800">單元掌握度分析</h3>
                 <div class="w-full max-w-xs">
                     <canvas id="radarChart"></canvas>
                 </div>
             </div>
 
             <!-- AI 建議區塊 -->
-            <div class="bg-white p-6 rounded-sm shadow-wabi border-2 border-wabi-main">
-                <h3 class="text-xl font-bold mb-4 border-b-2 border-wabi-main pb-2">專屬學習建議</h3>
-                <div id="advice-content" class="space-y-4 text-lg leading-relaxed">
+            <div class="bg-white p-6 rounded-xl shadow-lg border border-slate-100">
+                <h3 class="text-lg font-bold mb-4 border-b border-slate-100 pb-3 text-slate-800">專屬學習建議</h3>
+                <div id="advice-content" class="space-y-4 text-slate-700 leading-relaxed">
                     <!-- 建議動態產生 -->
                 </div>
-                <div class="mt-6 p-4 bg-wabi-bg border-l-4 border-wabi-green">
-                    <p class="font-bold">💡 均一教育平台指引：</p>
-                    <p class="text-sm mt-1">建議登入均一平台，針對上述較弱的單元重新觀看教學影片並完成指派任務。</p>
+                <div class="mt-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg">
+                    <p class="font-bold text-blue-800">💡 複習指引：</p>
+                    <p class="text-sm mt-1 text-blue-700">針對上述較弱的單元，請向老師索取對應單元的學習扶助教材進行加強。</p>
                 </div>
             </div>
         </div>
@@ -128,14 +179,12 @@
 
     <!-- Firebase 與應用程式邏輯 -->
     <script type="module">
-        // 匯入 Firebase 模組
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // ==========================================
-        // ⚠️ 請將以下替換為你的 Firebase 專案設定！⚠️
-        // ==========================================
-  const firebaseConfig = {
+        // 環境變數
+         const firebaseConfig = {
   apiKey: "AIzaSyBhgWYgAcaK2UmAeivCFEA-3GMstVAaqSE",
   authDomain: "support-8f876.firebaseapp.com",
   projectId: "support-8f876",
@@ -144,48 +193,163 @@
   appId: "1:20070208887:web:93c07c98361587f8e73d72"
 };
 
+        const firebaseConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
+        let firebaseConfig = {};
+        try { firebaseConfig = JSON.parse(firebaseConfigStr); } catch (e) { console.error("Config parse error", e); }
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-        // 初始化 Firebase (加入 try-catch 避免未設定時網頁直接當掉)
-        let db;
-        try {
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-        } catch (error) {
-            console.warn("Firebase 尚未設定，將暫時略過資料庫儲存功能。");
+        // Firebase 實例
+        let app, db, auth;
+        let currentUser = null;
+        let displayUserName = "";
+
+        // UI 狀態管理
+        const screens = {
+            login: document.getElementById('login-screen'),
+            mainMenu: document.getElementById('main-menu-screen'),
+            quiz: document.getElementById('quiz-screen'),
+            history: document.getElementById('history-screen'),
+            dashboard: document.getElementById('dashboard-screen')
+        };
+        const globalLoading = document.getElementById('global-loading');
+
+        function switchScreen(screenName) {
+            Object.values(screens).forEach(s => s.classList.add('hidden'));
+            if (screens[screenName]) screens[screenName].classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // 全域變數記錄當前學生 (解決 appId is not defined 的問題)
-        let currentStudentId = "";
-        let currentStudentName = "";
-        let radarChartInstance = null;
-
-        // --- 題庫定義 (20 題) ---
+        // --- 擴充題庫 (模擬學習扶助) ---
         const questionBank = [
-            { id: 1, unit: '數與量', text: '請問 24 和 36 的最大公因數是多少？', options: ['6', '12', '18', '24'], answer: 1 },
-            { id: 2, unit: '數與量', text: '計算 3/4 + 1/6 = ？', options: ['4/10', '11/12', '5/12', '4/24'], answer: 1 },
-            { id: 3, unit: '空間與形狀', text: '一個長方體的長、寬、高分別是 5公分、4公分、3公分，它的體積是多少立方公分？', options: ['12', '32', '60', '120'], answer: 2 },
-            { id: 4, unit: '代數', text: '如果 X + 15 = 40，那麼 X 等於多少？', options: ['15', '25', '35', '55'], answer: 1 },
-            { id: 5, unit: '資料與不確定性', text: '小明五次數學小考成績為：80, 90, 85, 95, 100。平均分數是多少？', options: ['88', '90', '92', '95'], answer: 1 },
-            { id: 6, unit: '數與量', text: '將 0.75 化為最簡分數為何？', options: ['1/2', '3/4', '4/5', '7/10'], answer: 1 },
-            { id: 7, unit: '數與量', text: '一件衣服打 8 折後的價格是 400 元，這件衣服原價是多少元？', options: ['480', '500', '520', '600'], answer: 1 },
-            { id: 8, unit: '空間與形狀', text: '半徑 10 公分的圓，其面積大約是多少平方公分？(圓周率以3.14計算)', options: ['31.4', '62.8', '314', '628'], answer: 2 },
-            { id: 9, unit: '關係', text: '甲和乙的錢數比是 3:2，如果甲有 300 元，乙有多少元？', options: ['100', '150', '200', '450'], answer: 2 },
-            { id: 10, unit: '代數', text: '哥哥今年 Y 歲，妹妹比哥哥小 4 歲，妹妹今年幾歲？', options: ['Y + 4', 'Y - 4', '4 - Y', '4Y'], answer: 1 },
-            { id: 11, unit: '數與量', text: '哪一個數是 7 的倍數？', options: ['27', '37', '42', '54'], answer: 2 },
-            { id: 12, unit: '數與量', text: '2.5 ÷ 0.5 = ？', options: ['0.5', '5', '1.25', '12.5'], answer: 1 },
-            { id: 13, unit: '空間與形狀', text: '正方體的每一個面都是什麼形狀？', options: ['長方形', '正方形', '平行四邊形', '菱形'], answer: 1 },
-            { id: 14, unit: '關係', text: '地圖上 1 公分代表實際距離 500 公尺，這張地圖的比例尺是多少？', options: ['1:500', '1:5000', '1:50000', '1:500000'], answer: 2 },
-            { id: 15, unit: '資料與不確定性', text: '丟一顆公正的六面骰子，出現偶數的機率是多少？', options: ['1/6', '1/3', '1/2', '2/3'], answer: 2 },
-            { id: 16, unit: '數與量', text: '下列哪個數是質數？', options: ['9', '15', '21', '23'], answer: 3 },
-            { id: 17, unit: '數與量', text: '一瓶果汁有 1.25 公升，4 瓶果汁共有多少公升？', options: ['4.25', '4.5', '5', '5.25'], answer: 2 },
-            { id: 18, unit: '空間與形狀', text: '三角形的內角和是多少度？', options: ['90度', '180度', '270度', '360度'], answer: 1 },
-            { id: 19, unit: '代數', text: '方程式 3X = 18 的解是多少？', options: ['3', '6', '9', '15'], answer: 1 },
-            { id: 20, unit: '關係', text: '如果一輛車 2 小時開了 120 公里，它的平均時速是多少公里？', options: ['60', '100', '120', '240'], answer: 0 }
+            // 數與量
+            { id: 'N1', unit: '數與量', text: '請問 24 和 36 的最大公因數是多少？', options: ['6', '12', '18', '24'], answer: 1 },
+            { id: 'N2', unit: '數與量', text: '計算 3/4 + 1/6 = ？', options: ['4/10', '11/12', '5/12', '4/24'], answer: 1 },
+            { id: 'N3', unit: '數與量', text: '將 0.75 化為最簡分數為何？', options: ['1/2', '3/4', '4/5', '7/10'], answer: 1 },
+            { id: 'N4', unit: '數與量', text: '哪一個數是 7 的倍數？', options: ['27', '37', '42', '54'], answer: 2 },
+            { id: 'N5', unit: '數與量', text: '2.5 ÷ 0.5 = ？', options: ['0.5', '5', '1.25', '12.5'], answer: 1 },
+            { id: 'N6', unit: '數與量', text: '下列哪個數是質數？', options: ['9', '15', '21', '23'], answer: 3 },
+            { id: 'N7', unit: '數與量', text: '一瓶果汁有 1.25 公升，4 瓶果汁共有多少公升？', options: ['4.25', '4.5', '5', '5.25'], answer: 2 },
+            { id: 'N8', unit: '數與量', text: '一件衣服打 8 折後的價格是 400 元，這件衣服原價是多少元？', options: ['480', '500', '520', '600'], answer: 1 },
+            { id: 'N9', unit: '數與量', text: '計算 12 × (5 + 3) = ？', options: ['63', '96', '60', '80'], answer: 1 },
+            { id: 'N10', unit: '數與量', text: '將 5/8 轉換為小數是多少？', options: ['0.625', '0.58', '0.85', '0.5'], answer: 0 },
+            
+            // 空間與形狀
+            { id: 'S1', unit: '空間與形狀', text: '一個長方體的長、寬、高分別是 5公分、4公分、3公分，它的體積是多少立方公分？', options: ['12', '32', '60', '120'], answer: 2 },
+            { id: 'S2', unit: '空間與形狀', text: '半徑 10 公分的圓，其面積大約是多少平方公分？(圓周率以3.14計算)', options: ['31.4', '62.8', '314', '628'], answer: 2 },
+            { id: 'S3', unit: '空間與形狀', text: '正方體的每一個面都是什麼形狀？', options: ['長方形', '正方形', '平行四邊形', '菱形'], answer: 1 },
+            { id: 'S4', unit: '空間與形狀', text: '三角形的內角和是多少度？', options: ['90度', '180度', '270度', '360度'], answer: 1 },
+            { id: 'S5', unit: '空間與形狀', text: '直徑為 20 公分的圓，圓周長大約是多少公分？(圓周率 3.14)', options: ['31.4', '62.8', '314', '628'], answer: 1 },
+            
+            // 代數
+            { id: 'A1', unit: '代數', text: '如果 X + 15 = 40，那麼 X 等於多少？', options: ['15', '25', '35', '55'], answer: 1 },
+            { id: 'A2', unit: '代數', text: '哥哥今年 Y 歲，妹妹比哥哥小 4 歲，妹妹今年幾歲？', options: ['Y + 4', 'Y - 4', '4 - Y', '4Y'], answer: 1 },
+            { id: 'A3', unit: '代數', text: '方程式 3X = 18 的解是多少？', options: ['3', '6', '9', '15'], answer: 1 },
+            { id: 'A4', unit: '代數', text: '如果 2Y - 5 = 15，Y 是多少？', options: ['5', '10', '15', '20'], answer: 1 },
+            
+            // 關係
+            { id: 'R1', unit: '關係', text: '甲和乙的錢數比是 3:2，如果甲有 300 元，乙有多少元？', options: ['100', '150', '200', '450'], answer: 2 },
+            { id: 'R2', unit: '關係', text: '地圖上 1 公分代表實際距離 500 公尺，這張地圖的比例尺是多少？', options: ['1:500', '1:5000', '1:50000', '1:500000'], answer: 2 },
+            { id: 'R3', unit: '關係', text: '如果一輛車 2 小時開了 120 公里，它的平均時速是多少公里？', options: ['60', '100', '120', '240'], answer: 0 },
+            { id: 'R4', unit: '關係', text: '機器 5 分鐘可以印 100 張紙，印 300 張紙需要幾分鐘？', options: ['10', '15', '20', '30'], answer: 1 },
+            
+            // 資料與不確定性
+            { id: 'D1', unit: '資料與不確定性', text: '小明五次數學小考成績為：80, 90, 85, 95, 100。平均分數是多少？', options: ['88', '90', '92', '95'], answer: 1 },
+            { id: 'D2', unit: '資料與不確定性', text: '丟一顆公正的六面骰子，出現偶數的機率是多少？', options: ['1/6', '1/3', '1/2', '2/3'], answer: 2 },
+            { id: 'D3', unit: '資料與不確定性', text: '一個袋子裡有 3 顆紅球和 2 顆白球，抽中白球的機率是多少？', options: ['2/3', '3/5', '2/5', '1/5'], answer: 2 }
         ];
 
         let currentQuizQuestions = [];
+        const QUESTIONS_PER_QUIZ = 15; // 每次測驗的題數設定
+        let radarChartInstance = null;
 
-        // --- 工具函式：隨機洗牌 ---
+        // --- 初始化邏輯與 Auth ---
+        async function initialize() {
+            try {
+                if (Object.keys(firebaseConfig).length === 0) {
+                    throw new Error("Firebase config is empty");
+                }
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // 處理登入狀態
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        currentUser = user;
+                        // 如果有顯示名稱則使用，否則可能是匿名登入剛完成
+                        if(displayUserName) {
+                            finishLoginFlow();
+                        } else {
+                            // 若直接載入已有 session，顯示主選單 (實務上這類簡易系統可能需要重新輸入名字，或從 user profile 抓)
+                            // 這裡為了簡化，如果沒名字就讓他重新輸入
+                            switchScreen('login');
+                            globalLoading.classList.add('hidden');
+                        }
+                    } else {
+                        switchScreen('login');
+                        globalLoading.classList.add('hidden');
+                    }
+                });
+
+                // 如果還沒觸發 onAuthStateChanged，先讓 loading 消失
+                setTimeout(() => {
+                    if(!currentUser) {
+                        globalLoading.classList.add('hidden');
+                        switchScreen('login');
+                    }
+                }, 1500);
+
+            } catch (error) {
+                console.error("Firebase 初始化失敗:", error);
+                document.getElementById('loading-text').textContent = "系統載入失敗，請稍後再試。";
+                // 這裡不使用 alert
+            }
+        }
+
+        // 登入處理
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nameInput = document.getElementById('student-name').value.trim();
+            if(!nameInput) return;
+
+            displayUserName = nameInput;
+            
+            const btnText = document.getElementById('login-btn-text');
+            const spinner = document.getElementById('login-spinner');
+            btnText.textContent = '登入中...';
+            spinner.classList.remove('hidden');
+
+            try {
+                if(initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                // onAuthStateChanged 會接手後續動作
+                finishLoginFlow();
+            } catch(e) {
+                console.error("Auth error", e);
+                btnText.textContent = '進入系統';
+                spinner.classList.add('hidden');
+            }
+        });
+
+        function finishLoginFlow() {
+            document.getElementById('menu-user-name').textContent = displayUserName;
+            globalLoading.classList.add('hidden');
+            document.getElementById('login-btn-text').textContent = '進入系統';
+            document.getElementById('login-spinner').classList.add('hidden');
+            switchScreen('mainMenu');
+        }
+        
+        document.getElementById('btn-logout').addEventListener('click', () => {
+            if(auth) signOut(auth);
+            displayUserName = "";
+            document.getElementById('student-name').value = "";
+            switchScreen('login');
+        });
+
+        // --- 測驗核心邏輯 ---
         function shuffle(array) {
             const newArr = [...array];
             for (let i = newArr.length - 1; i > 0; i--) {
@@ -195,69 +359,63 @@
             return newArr;
         }
 
-        // --- 介面切換邏輯 ---
-        const loginScreen = document.getElementById('login-screen');
-        const quizScreen = document.getElementById('quiz-screen');
-        const dashboardScreen = document.getElementById('dashboard-screen');
-
-        // 登入事件
-        document.getElementById('login-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const name = document.getElementById('student-name').value;
-            const pwd = document.getElementById('student-pwd').value;
-            
-            // 簡單密碼驗證 (實務上應由後端處理)
-            if(pwd.length < 3) {
-                alert("密碼錯誤或太短！");
-                return;
-            }
-
-            // 設定全域變數 (作為學生的唯一識別，修正 appId 錯誤)
-            currentStudentId = name + "_" + pwd;
-            currentStudentName = name;
-            
-            document.getElementById('display-name').textContent = name;
-            document.getElementById('dash-name').textContent = name;
-            
-            startQuiz();
+        document.getElementById('btn-start-quiz').addEventListener('click', () => {
+            // 洗牌並選擇指定題數
+            currentQuizQuestions = shuffle(questionBank).slice(0, QUESTIONS_PER_QUIZ);
+            document.getElementById('quiz-total-q').textContent = QUESTIONS_PER_QUIZ;
+            renderQuestions();
+            switchScreen('quiz');
         });
 
-        // 開始測驗
-        function startQuiz() {
-            loginScreen.classList.add('hidden');
-            dashboardScreen.classList.add('hidden');
-            quizScreen.classList.remove('hidden');
+        document.getElementById('btn-cancel-quiz').addEventListener('click', () => {
+            // 自訂 Modal 替代 confirm
+            const p = document.createElement('div');
+            p.className = 'fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50';
+            p.innerHTML = `
+                <div class="bg-white p-6 rounded-xl shadow-xl max-w-sm w-full m-4 text-center">
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">確定要放棄測驗嗎？</h3>
+                    <p class="text-slate-500 mb-6">目前的作答進度將不會被儲存。</p>
+                    <div class="flex justify-center gap-4">
+                        <button id="modal-cancel" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50">繼續測驗</button>
+                        <button id="modal-confirm" class="px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600">確定放棄</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(p);
             
-            // 洗牌並選出 20 題 (這裡題庫剛好 20 題，洗牌後全上)
-            currentQuizQuestions = shuffle(questionBank).slice(0, 20);
-            renderQuestions();
-        }
+            document.getElementById('modal-cancel').onclick = () => p.remove();
+            document.getElementById('modal-confirm').onclick = () => {
+                p.remove();
+                switchScreen('mainMenu');
+            };
+        });
 
-        // 渲染題目
         function renderQuestions() {
             const container = document.getElementById('quiz-container');
             container.innerHTML = '';
 
             currentQuizQuestions.forEach((q, index) => {
                 const qDiv = document.createElement('div');
-                qDiv.className = 'p-4 border-2 border-wabi-main/20 rounded-sm bg-white hover:border-wabi-main transition-colors';
+                qDiv.className = 'p-5 border border-slate-200 rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow';
                 
                 let optionsHtml = '';
-                q.options.forEach((opt, optIdx) => {
+                // 洗牌選項，但保留原本正確答案的追蹤
+                const shuffledOptions = q.options.map((opt, i) => ({text: opt, isCorrect: i === q.answer}));
+                shuffle(shuffledOptions).forEach((optObj, renderIdx) => {
                     optionsHtml += `
-                        <label class="flex items-center space-x-3 p-2 hover:bg-wabi-bg rounded cursor-pointer">
-                            <input type="radio" name="q_${index}" value="${optIdx}" class="w-5 h-5 text-wabi-main">
-                            <span class="text-lg">${opt}</span>
+                        <label class="flex items-center space-x-3 p-3 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors">
+                            <input type="radio" name="q_${index}" value="${optObj.isCorrect ? 'correct' : 'wrong'}" class="w-5 h-5 text-blue-600 border-slate-300 focus:ring-blue-500">
+                            <span class="text-lg text-slate-700">${optObj.text}</span>
                         </label>
                     `;
                 });
 
                 qDiv.innerHTML = `
-                    <div class="mb-3 flex items-start">
-                        <span class="bg-wabi-main text-white px-2 py-1 text-sm rounded-sm mr-3 mt-1 whitespace-nowrap">第 ${index + 1} 題</span>
-                        <h3 class="text-xl font-bold leading-relaxed">${q.text} <span class="text-sm text-wabi-main/50 ml-2">(${q.unit})</span></h3>
+                    <div class="mb-4 flex items-start">
+                        <span class="bg-blue-100 text-blue-700 font-bold px-3 py-1 text-sm rounded-lg mr-3 mt-0.5 whitespace-nowrap flex-shrink-0">第 ${index + 1} 題</span>
+                        <h3 class="text-lg font-bold text-slate-800 leading-relaxed">${q.text} <span class="text-sm font-normal text-slate-400 ml-2 block sm:inline">(${q.unit})</span></h3>
                     </div>
-                    <div class="space-y-2 ml-14">
+                    <div class="space-y-1 ml-14">
                         ${optionsHtml}
                     </div>
                 `;
@@ -265,8 +423,10 @@
             });
         }
 
-        // --- 交卷與計算成績 ---
+        // --- 交卷與儲存 ---
         document.getElementById('submit-quiz').addEventListener('click', async () => {
+            if (!currentUser) return; // Guard clause
+
             let correctCount = 0;
             const unitStats = {
                 '數與量': { total: 0, correct: 0 },
@@ -276,72 +436,100 @@
                 '資料與不確定性': { total: 0, correct: 0 }
             };
 
-            let allAnswered = true;
+            let answeredCount = 0;
 
             currentQuizQuestions.forEach((q, index) => {
                 const selected = document.querySelector(`input[name="q_${index}"]:checked`);
                 unitStats[q.unit].total += 1;
                 
                 if (selected) {
-                    if (parseInt(selected.value) === q.answer) {
+                    answeredCount++;
+                    if (selected.value === 'correct') {
                         correctCount++;
                         unitStats[q.unit].correct += 1;
                     }
-                } else {
-                    allAnswered = false;
                 }
             });
 
-            if (!allAnswered) {
-                const confirmSubmit = confirm("還有題目未作答，確定要交卷嗎？");
-                if (!confirmSubmit) return;
+            if (answeredCount < currentQuizQuestions.length) {
+                // 自訂 Modal 替代 alert
+                const p = document.createElement('div');
+                p.className = 'fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50';
+                p.innerHTML = `
+                    <div class="bg-white p-6 rounded-xl shadow-xl max-w-sm w-full m-4 text-center">
+                        <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-800 mb-2">還有題目未作答</h3>
+                        <p class="text-slate-500 mb-6">目前作答了 ${answeredCount} / ${currentQuizQuestions.length} 題，請完成所有題目再交卷。</p>
+                        <button id="modal-close" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">繼續作答</button>
+                    </div>
+                `;
+                document.body.appendChild(p);
+                document.getElementById('modal-close').onclick = () => p.remove();
+                return;
             }
 
-            const finalScore = Math.round((correctCount / currentQuizQuestions.length) * 100);
+            // 開始儲存流程
+            const btnText = document.getElementById('submit-btn-text');
+            const spinner = document.getElementById('submit-spinner');
+            const btn = document.getElementById('submit-quiz');
             
-            // 將成績存入 Firebase (已修正變數錯誤，使用 currentStudentId)
+            btn.disabled = true;
+            btnText.textContent = '成績結算中...';
+            spinner.classList.remove('hidden');
+
+            const finalScore = Math.round((correctCount / currentQuizQuestions.length) * 100);
+            const now = new Date();
+            
+            // 遵循 MANDATORY RULE 1: 使用 /artifacts/{appId}/users/{userId}/{collectionName}
             if (db) {
                 try {
-                    await addDoc(collection(db, "quiz_results"), {
-                        studentId: currentStudentId,
-                        studentName: currentStudentName,
+                    const recordsRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'quiz_records');
+                    await addDoc(recordsRef, {
+                        studentName: displayUserName,
                         score: finalScore,
                         unitStats: unitStats,
-                        timestamp: serverTimestamp()
+                        totalQuestions: currentQuizQuestions.length,
+                        correctCount: correctCount,
+                        timestamp: serverTimestamp(),
+                        localDateString: now.toLocaleString() // 為了在 UI 顯示方便
                     });
-                    console.log("成績已儲存至資料庫！");
                 } catch (error) {
                     console.error("儲存成績失敗：", error);
                 }
             }
 
-            showDashboard(finalScore, unitStats);
+            btn.disabled = false;
+            btnText.textContent = '交卷並分析成績';
+            spinner.classList.add('hidden');
+
+            renderDashboard(finalScore, unitStats, now.toLocaleString());
+            switchScreen('dashboard');
         });
 
-        // --- 顯示儀表板與分析 ---
-        function showDashboard(score, stats) {
-            quizScreen.classList.add('hidden');
-            dashboardScreen.classList.remove('hidden');
-
+        // --- 儀表板繪製 ---
+        function renderDashboard(score, stats, dateStr) {
             // 1. 顯示總分
             const scoreEl = document.getElementById('final-score');
             scoreEl.textContent = `${score} 分`;
-            if (score >= 80) scoreEl.className = "text-5xl font-bold text-wabi-green mb-2";
-            else if (score >= 60) scoreEl.className = "text-5xl font-bold text-wabi-main mb-2";
-            else scoreEl.className = "text-5xl font-bold text-wabi-accent mb-2";
+            if (score >= 80) scoreEl.className = "text-6xl font-extrabold text-emerald-500 mb-2";
+            else if (score >= 60) scoreEl.className = "text-6xl font-extrabold text-blue-600 mb-2";
+            else scoreEl.className = "text-6xl font-extrabold text-rose-500 mb-2";
+            
+            document.getElementById('dash-date').textContent = dateStr;
 
             // 2. 繪製雷達圖
             const labels = Object.keys(stats);
             const dataRates = labels.map(label => {
-                if(stats[label].total === 0) return 100; // 防呆
+                if(stats[label].total === 0) return 100; // 沒考到的單元預設100
                 return Math.round((stats[label].correct / stats[label].total) * 100);
             });
 
             if (radarChartInstance) radarChartInstance.destroy();
             const ctx = document.getElementById('radarChart').getContext('2d');
             
-            // Chart.js 預設字體改為思源宋體
-            Chart.defaults.font.family = '"Noto Serif TC", serif';
+            Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
             
             radarChartInstance = new Chart(ctx, {
                 type: 'radar',
@@ -350,22 +538,23 @@
                     datasets: [{
                         label: '單元答對率 (%)',
                         data: dataRates,
-                        backgroundColor: 'rgba(44, 62, 80, 0.2)', // 鐵紺透明
-                        borderColor: '#2C3E50',
-                        pointBackgroundColor: '#C14545',
+                        backgroundColor: 'rgba(37, 99, 235, 0.15)',
+                        borderColor: '#2563eb',
+                        pointBackgroundColor: '#2563eb',
                         pointBorderColor: '#fff',
                         pointHoverBackgroundColor: '#fff',
-                        pointHoverBorderColor: '#C14545'
+                        pointHoverBorderColor: '#2563eb',
+                        borderWidth: 2
                     }]
                 },
                 options: {
                     scales: {
                         r: {
-                            angleLines: { color: 'rgba(44, 62, 80, 0.3)' },
-                            grid: { color: 'rgba(44, 62, 80, 0.2)' },
+                            angleLines: { color: 'rgba(0, 0, 0, 0.1)' },
+                            grid: { color: 'rgba(0, 0, 0, 0.1)' },
                             pointLabels: {
-                                font: { size: 14, weight: 'bold' },
-                                color: '#2C3E50'
+                                font: { size: 12, weight: '600' },
+                                color: '#475569'
                             },
                             ticks: { display: false, min: 0, max: 100 }
                         }
@@ -376,8 +565,6 @@
 
             // 3. 產生個人化建議
             const adviceContainer = document.getElementById('advice-content');
-            adviceContainer.innerHTML = '';
-            
             let weakUnits = [];
             let strongUnits = [];
             
@@ -388,31 +575,130 @@
                 }
             });
 
-            let adviceText = `<p>哈囉，<strong>${currentStudentName}</strong>：</p>`;
+            let adviceText = `<p><strong>${displayUserName}</strong> 同學，辛苦了！</p>`;
             
             if (weakUnits.length === 0) {
-                adviceText += `<p>太棒了！你的數學基礎非常扎實，各個單元都掌握得很好。請繼續保持這份熱情！</p>`;
+                adviceText += `<p>本次測驗表現優異，各個概念都掌握得不錯。請繼續保持！</p>`;
             } else {
                 if (strongUnits.length > 0) {
-                    adviceText += `<p>你在 <span class="font-bold text-wabi-green">【${strongUnits.join('、')}】</span> 單元表現得很不錯喔！</p>`;
+                    adviceText += `<p>你在 <span class="font-bold text-emerald-600">【${strongUnits.join('、')}】</span> 單元表現很好喔！</p>`;
                 }
-                adviceText += `<p>根據測驗結果，你在 <span class="font-bold text-wabi-accent border-b-2 border-wabi-accent">【${weakUnits.join('、')}】</span> 這幾個部分還需要多加練習。</p>`;
+                adviceText += `<p>根據測驗結果，<span class="font-bold text-rose-500">【${weakUnits.join('、')}】</span> 是需要優先加強的部分。</p>`;
                 
-                adviceText += `<ul class="list-disc list-inside mt-2 space-y-1 text-sm text-wabi-main/80">`;
-                if(weakUnits.includes('數與量')) adviceText += `<li><strong>數與量：</strong> 建議重新複習因數、倍數與小數分數的運算規則。</li>`;
-                if(weakUnits.includes('空間與形狀')) adviceText += `<li><strong>空間與形狀：</strong> 可以多畫圖幫助理解面積與體積的公式由來。</li>`;
-                if(weakUnits.includes('代數')) adviceText += `<li><strong>代數：</strong> 試著把未知數 X 當作一個「神祕盒子」，運用等量公理來解題。</li>`;
+                adviceText += `<ul class="list-disc list-inside mt-3 space-y-2 text-sm text-slate-600">`;
+                if(weakUnits.includes('數與量')) adviceText += `<li><strong>數與量：</strong> 複習分數、小數的四則運算規則，注意計算過程。</li>`;
+                if(weakUnits.includes('空間與形狀')) adviceText += `<li><strong>空間與形狀：</strong> 熟悉常見形體的面積與體積公式。</li>`;
+                if(weakUnits.includes('代數')) adviceText += `<li><strong>代數：</strong> 學習如何依題意列出含未知數的算式並求解。</li>`;
+                if(weakUnits.includes('關係')) adviceText += `<li><strong>關係：</strong> 複習比例尺與速率的概念。</li>`;
+                if(weakUnits.includes('資料與不確定性')) adviceText += `<li><strong>資料與不確定性：</strong> 練習計算平均數與簡單機率。</li>`;
                 adviceText += `</ul>`;
             }
-            
             adviceContainer.innerHTML = adviceText;
         }
 
-        // 重新測驗按鈕
-        document.getElementById('btn-restart').addEventListener('click', () => {
-            startQuiz(); // 重新洗牌並測驗
-            window.scrollTo(0, 0);
+        // --- 歷史紀錄查詢邏輯 ---
+        document.getElementById('btn-view-history').addEventListener('click', async () => {
+            switchScreen('history');
+            const loading = document.getElementById('history-loading');
+            const emptyState = document.getElementById('history-empty');
+            const listContainer = document.getElementById('history-list-container');
+            
+            loading.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            listContainer.classList.add('hidden');
+            listContainer.innerHTML = '';
+
+            if (!currentUser || !db) {
+                loading.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                // 遵循 MANDATORY RULE 2: 簡單 Query，不使用 orderBy 避免要求 Index，在客戶端排序
+                const recordsRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'quiz_records');
+                const querySnapshot = await getDocs(query(recordsRef));
+                
+                let records = [];
+                querySnapshot.forEach((doc) => {
+                    records.push({ id: doc.id, ...doc.data() });
+                });
+
+                if (records.length === 0) {
+                    loading.classList.add('hidden');
+                    emptyState.classList.remove('hidden');
+                    return;
+                }
+
+                // 在客戶端以時間戳記排序 (由新到舊)
+                records.sort((a, b) => {
+                    const timeA = a.timestamp ? a.timestamp.toMillis() : 0;
+                    const timeB = b.timestamp ? b.timestamp.toMillis() : 0;
+                    return timeB - timeA;
+                });
+
+                records.forEach((rec, idx) => {
+                    const item = document.createElement('div');
+                    item.className = "bg-slate-50 border border-slate-200 p-4 rounded-lg flex flex-col md:flex-row justify-between items-start md:items-center hover:shadow-md transition-shadow cursor-pointer";
+                    
+                    let scoreColor = "text-rose-500";
+                    if(rec.score >= 80) scoreColor = "text-emerald-500";
+                    else if (rec.score >= 60) scoreColor = "text-blue-600";
+
+                    // 找出最弱的單元
+                    let weakestUnit = "無";
+                    let minRate = 101;
+                    if(rec.unitStats) {
+                        for(const [unit, stats] of Object.entries(rec.unitStats)) {
+                            if(stats.total > 0) {
+                                const rate = stats.correct / stats.total;
+                                if(rate < minRate) {
+                                    minRate = rate;
+                                    weakestUnit = unit;
+                                }
+                            }
+                        }
+                    }
+
+                    item.innerHTML = `
+                        <div class="mb-2 md:mb-0">
+                            <div class="text-sm text-slate-500 font-medium mb-1">${rec.localDateString || '未知時間'}</div>
+                            <div class="text-slate-800">作答數：${rec.correctCount}/${rec.totalQuestions} 題 <span class="mx-2 text-slate-300">|</span> 待加強：<span class="text-slate-600">${weakestUnit}</span></div>
+                        </div>
+                        <div class="flex items-center gap-4 w-full md:w-auto justify-end">
+                            <div class="text-3xl font-extrabold ${scoreColor}">${rec.score} <span class="text-sm font-normal text-slate-500">分</span></div>
+                            <button class="px-3 py-1 bg-white border border-slate-300 rounded text-sm text-slate-600 hover:bg-slate-100 hidden md:block">查看細節</button>
+                        </div>
+                    `;
+                    
+                    // 點擊卡片重新渲染該次紀錄的儀表板
+                    item.addEventListener('click', () => {
+                        renderDashboard(rec.score, rec.unitStats, rec.localDateString);
+                        switchScreen('dashboard');
+                        // 隱藏回主選單，因為是從歷史紀錄來的
+                    });
+
+                    listContainer.appendChild(item);
+                });
+
+                loading.classList.add('hidden');
+                listContainer.classList.remove('hidden');
+
+            } catch (error) {
+                console.error("讀取歷史紀錄失敗", error);
+                loading.classList.add('hidden');
+                listContainer.innerHTML = '<div class="text-center text-rose-500 py-8">讀取資料失敗，請確認網路連線。</div>';
+                listContainer.classList.remove('hidden');
+            }
         });
+
+        // 按鈕綁定
+        document.getElementById('btn-history-back').addEventListener('click', () => switchScreen('mainMenu'));
+        document.getElementById('btn-dash-home').addEventListener('click', () => switchScreen('mainMenu'));
+        document.getElementById('btn-dash-history').addEventListener('click', () => document.getElementById('btn-view-history').click());
+
+        // 啟動應用
+        window.addEventListener('DOMContentLoaded', initialize);
 
     </script>
 </body>
