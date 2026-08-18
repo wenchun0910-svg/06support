@@ -184,6 +184,7 @@
         import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // 環境變數
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-math-app';
          const firebaseConfig = {
   apiKey: "AIzaSyBhgWYgAcaK2UmAeivCFEA-3GMstVAaqSE",
   authDomain: "support-8f876.firebaseapp.com",
@@ -193,7 +194,6 @@
   appId: "1:20070208887:web:93c07c98361587f8e73d72"
 };
 
-        const firebaseConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
         let firebaseConfig = {};
         try { firebaseConfig = JSON.parse(firebaseConfigStr); } catch (e) { console.error("Config parse error", e); }
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
