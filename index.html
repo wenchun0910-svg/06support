@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>均一六年級數學學習扶助測驗系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        junyi: {
+                            orange: '#EC6C1F',
+                            yellow: '#F6AC18',
+                            blue: '#0363A7',
+                            lightBlue: '#83CCD1'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f0f7f8; /* Soft background using a very light version of the lightBlue */
+        }
+        .hidden { display: none !important; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(3, 99, 167, 0.1), 0 2px 4px -1px rgba(3, 99, 167, 0.06); /* Tinted shadow */
+            border-top: 4px solid #0363A7; /* Junyi Blue top border for branding */
+        }
+        /* Loading spinner */
+        .spinner {
+            border: 4px solid rgba(131, 204, 209, 0.3); /* Light blue base */
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #EC6C1F; /* Junyi Orange active part */
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .junyi-gradient-text {
+            background: linear-gradient(90deg, #0363A7 0%, #83CCD1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="text-gray-800 antialiased min-h-screen flex flex-col items-center py-8 px-4">
+
+    <div class="w-full max-w-5xl">
+        <!-- Header -->
+        <header class="text-center mb-8 flex flex-col items-center">
+            <!-- Simulated Logo shape using brand colors -->
+            <div class="flex space-x-1 mb-3">
+                <div class="w-4 h-4 rounded-full bg-junyi-blue"></div>
+                <div class="w-4 h-4 rounded-full bg-junyi-lightBlue"></div>
+                <div class="w-4 h-4 rounded-full bg-junyi-orange"></div>
+                <div class="w-4 h-4 rounded-full bg-junyi-yellow"></div>
+            </div>
+            <h1 class="text-3xl md:text-4xl font-bold text-junyi-blue drop-shadow-sm">均一六年級數學學習扶助</h1>
+            <p class="text-gray-500 mt-2 font-medium">測驗分析與建議儀表板</p>
+        </header>
+
+        <!-- View 1: Login / Registration -->
+        <div id="loginView" class="glass-panel p-8 max-w-md mx-auto transition-all duration-300 border-t-junyi-orange">
+            <h2 class="text-2xl font-bold mb-6 text-center text-junyi-blue">學生登入</h2>
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="studentId">學號 / 帳號</label>
+                <input class="shadow-sm appearance-none border border-gray-300 rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-junyi-lightBlue focus:border-transparent" id="studentId" type="text" placeholder="例如: 112001">
+            </div>
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="password">密碼</label>
+                <input class="shadow-sm appearance-none border border-gray-300 rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-junyi-lightBlue focus:border-transparent" id="password" type="password" placeholder="請輸入密碼">
+            </div>
+            <div id="loginError" class="text-red-500 text-sm mb-4 hidden bg-red-50 p-2 rounded border border-red-200">登入失敗，請檢查帳號密碼。</div>
+            <button id="loginBtn" class="bg-junyi-blue hover:bg-[#024f85] text-white font-bold py-3 px-4 rounded w-full transition duration-200 shadow-md">
+                登入測驗系統
+            </button>
+            <div class="text-center mt-4">
+                <span class="text-sm text-gray-500">首次使用將自動註冊</span>
+            </div>
+            
+            <div id="authLoading" class="hidden flex justify-center mt-4">
+                <div class="spinner"></div>
+            </div>
+        </div>
+
+        <!-- View 2: Main Menu -->
+        <div id="mainMenuView" class="hidden">
+            <div class="flex justify-between items-center mb-6 bg-white p-4 rounded-xl shadow-sm border-l-4 border-l-junyi-yellow">
+                <h2 class="text-2xl font-bold text-gray-800">歡迎, <span id="welcomeName" class="text-junyi-blue">同學</span></h2>
+                <button id="logoutBtn" class="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded transition duration-200 border border-gray-200">登出</button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Start Quiz Card -->
+                <div class="glass-panel p-8 text-center hover:shadow-lg hover:-translate-y-1 transition duration-300 cursor-pointer border-t-junyi-lightBlue" id="startQuizBtn">
+                    <div class="bg-[#E6F4F5] text-junyi-lightBlue rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 border-2 border-junyi-lightBlue">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-junyi-blue mb-2">開始新測驗</h3>
+                    <p class="text-gray-600">數學六年級學習扶助複習檢測</p>
+                    <div class="mt-4 text-xs inline-block bg-junyi-orange text-white px-3 py-1 rounded-full">包含數與量、幾何、代數等</div>
+                </div>
+
+                <!-- View Dashboard Card -->
+                <div class="glass-panel p-8 text-center hover:shadow-lg hover:-translate-y-1 transition duration-300 cursor-pointer border-t-junyi-orange" id="viewDashboardBtn">
+                    <div class="bg-[#FDF0E8] text-junyi-orange rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4 border-2 border-junyi-orange">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-junyi-blue mb-2">個人學習儀表板</h3>
+                    <p class="text-gray-600">查看各指標分析、歷次成績與學習建議</p>
+                    <div class="mt-4 text-xs inline-block bg-junyi-yellow text-gray-800 px-3 py-1 rounded-full">了解弱點，精準學習</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- View 3: Quiz Interface -->
+        <div id="quizView" class="hidden glass-panel p-6 md:p-10 border-t-junyi-blue">
+            <div class="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
+                <h2 class="text-xl font-bold text-junyi-blue">學習扶助複習檢測</h2>
+                <div class="bg-gray-100 px-4 py-1 rounded-full text-sm font-bold text-gray-600 border border-gray-200">
+                    進度: <span id="quizProgress" class="text-junyi-orange">1 / 10</span>
+                </div>
+            </div>
+            
+            <div id="questionContainer" class="mb-8 min-h-[200px]">
+                <!-- Question will be injected here -->
+            </div>
+            
+            <div id="optionsContainer" class="grid grid-cols-1 gap-4 mb-8">
+                <!-- Options will be injected here -->
+            </div>
+            
+            <div class="flex justify-between mt-8 pt-4 border-t border-gray-100">
+                <button id="prevBtn" class="bg-white border-2 border-gray-300 hover:border-gray-400 text-gray-700 font-bold py-2 px-6 rounded-lg transition duration-200 hidden">上一題</button>
+                <div class="flex-grow"></div>
+                <button id="nextBtn" class="bg-junyi-blue hover:bg-[#024f85] text-white font-bold py-2 px-8 rounded-lg shadow-md transition duration-200">下一題</button>
+                <button id="submitQuizBtn" class="bg-junyi-orange hover:bg-[#d65a11] text-white font-bold py-2 px-8 rounded-lg shadow-md transition duration-200 hidden">提交測驗</button>
+            </div>
+        </div>
+
+        <!-- View 4: Dashboard -->
+        <div id="dashboardView" class="hidden space-y-6">
+            <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border-l-4 border-l-junyi-blue">
+                <button id="backToMenuBtn" class="flex items-center text-junyi-blue hover:text-[#024f85] font-bold px-3 py-1 rounded hover:bg-[#e6f0f7] transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                    </svg>
+                    回主選單
+                </button>
+                <h2 class="text-xl font-bold text-gray-800">學習分析儀表板</h2>
+                <div class="w-28"></div> <!-- Spacer for centering -->
+            </div>
+
+            <!-- Loading indicator for Dashboard -->
+            <div id="dashboardLoading" class="glass-panel p-10 flex flex-col items-center justify-center hidden border-t-junyi-lightBlue">
+                <div class="spinner mb-4"></div>
+                <p class="text-junyi-blue font-medium">正在為您分析學習數據...</p>
+            </div>
+
+            <div id="dashboardContent">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Overview Stats -->
+                    <div class="lg:col-span-1 space-y-6">
+                        <div class="glass-panel p-6 border-t-junyi-blue relative overflow-hidden">
+                            <!-- Decorative background circle -->
+                            <div class="absolute -right-10 -top-10 w-32 h-32 bg-[#e6f0f7] rounded-full opacity-50 z-0"></div>
+                            
+                            <h3 class="text-lg font-bold text-junyi-blue mb-4 border-b border-gray-100 pb-2 relative z-10">總體表現</h3>
+                            <div class="flex flex-col items-center relative z-10">
+                                <div class="relative w-32 h-32 flex items-center justify-center rounded-full bg-white border-4 border-junyi-lightBlue mb-4 shadow-inner">
+                                    <span id="avgScoreDisplay" class="text-4xl font-black text-junyi-blue">--</span>
+                                    <span class="absolute bottom-2 text-xs font-bold text-gray-500">平均分數</span>
+                                </div>
+                                <div class="w-full grid grid-cols-2 gap-4 text-center mt-2">
+                                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-100 shadow-sm">
+                                        <div class="text-xs text-gray-500 font-bold mb-1">測驗次數</div>
+                                        <div id="quizCountDisplay" class="text-xl font-black text-gray-800">--</div>
+                                    </div>
+                                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-100 shadow-sm">
+                                        <div class="text-xs text-gray-500 font-bold mb-1">最近成績</div>
+                                        <div id="latestScoreDisplay" class="text-xl font-black text-gray-800">--</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Personal Advice -->
+                        <div class="glass-panel p-6 border-t-junyi-yellow">
+                            <h3 class="text-lg font-bold text-gray-800 mb-4 border-b border-gray-100 pb-2 flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-junyi-yellow" viewBox="0 0 20 20" fill="currentColor">
+                                    <path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1h4v1a2 2 0 11-4 0zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.476.859h4.002z" />
+                                </svg>
+                                專屬學習建議
+                            </h3>
+                            <div id="aiAdviceContainer" class="text-gray-700 text-sm leading-relaxed space-y-3">
+                                載入中...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Area -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <!-- Unit Analysis Radar Chart -->
+                        <div class="glass-panel p-6 border-t-junyi-lightBlue">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-lg font-bold text-junyi-blue">指標掌握度分析 (答對率)</h3>
+                                <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">108課綱對應</span>
+                            </div>
+                            <div class="h-64 flex justify-center w-full relative">
+                                <canvas id="radarChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- History Progress Line Chart -->
+                        <div class="glass-panel p-6 border-t-junyi-orange">
+                            <h3 class="text-lg font-bold text-gray-800 mb-4">歷次測驗成長軌跡</h3>
+                            <div class="h-56 w-full">
+                                <canvas id="lineChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- History List -->
+                        <div class="glass-panel p-6 border-t-gray-300">
+                            <h3 class="text-lg font-bold text-gray-800 mb-4">詳細檢測紀錄</h3>
+                            <div class="overflow-x-auto rounded-lg border border-gray-200">
+                                <table class="min-w-full bg-white">
+                                    <thead class="bg-gray-50 border-b border-gray-200">
+                                        <tr>
+                                            <th class="py-3 px-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">測驗日期</th>
+                                            <th class="py-3 px-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">總分數</th>
+                                            <th class="py-3 px-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">待加強指標 (均一建議)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="historyTableBody" class="divide-y divide-gray-100 text-sm">
+                                        <!-- History rows here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="noDataMessage" class="hidden glass-panel p-10 text-center border-t-gray-300">
+                <div class="bg-gray-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-700 mb-2">尚無測驗紀錄</h3>
+                <p class="text-gray-500 mb-6">您還沒有完成任何測驗，請先進行一次測驗，儀表板將為您產生專屬學習分析。</p>
+                <button onclick="showView('mainMenuView')" class="bg-junyi-blue hover:bg-[#024f85] text-white font-bold py-2 px-8 rounded-lg shadow-md transition duration-200">
+                    前往測驗
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Configuration setup from environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-math-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            // Dummy config for local testing if needed
+        };
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let app;
+        let db;
+        let auth;
+        let currentUser = null;
+        let studentProfile = null; // Stores student ID and hashed pass for simple auth simulation
+
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+        } catch (error) {
+            console.error("Firebase initialization error:", error);
+            // Ignore alert in this environment, console log is sufficient
+        }
+
+        // --- Mock Data: Quiz Questions based on Grade 6 Remedial Math (108 Syllabus Alignment) ---
+        /* 指標分類對應均一六年級學習扶助內容：
+           N: 數與量 (因數倍數、分數小數四則、速率)
+           S: 空間與形狀 (圓面積、角柱與圓柱、基準量)
+           R: 關係 (正比、比例尺)
+           A: 代數 (數量關係、解未知數)
+           D: 資料與不確定性 (圓餅圖)
+        */
+        const quizDatabase = [
+            {
+                id: "q1",
+                unit: "N",
+                unitName: "數與量：因數與倍數",
+                question: "有 24 顆蘋果和 36 顆橘子，要平分裝在禮盒中，每盒的蘋果要一樣多，橘子也要一樣多，最多可以裝成幾盒？",
+                options: ["6 盒", "12 盒", "24 盒", "72 盒"],
+                correctIndex: 1, 
+                explanation: "求平分的最大數量，即求 24 和 36 的最大公因數。24 和 36 的最大公因數是 12。"
+            },
+            {
+                id: "q2",
+                unit: "N",
+                unitName: "數與量：分數的除法",
+                question: "一條長 $3\\frac{1}{2}$ 公尺的繩子，每 $\\frac{1}{4}$ 公尺剪成一段，可以剪成幾段？",
+                options: ["7 段", "12 段", "14 段", "28 段"],
+                correctIndex: 2,
+                explanation: "將總長除以每段長度：$3\\frac{1}{2} \\div \\frac{1}{4} = \\frac{7}{2} \\times 4 = 14$。"
+            },
+            {
+                id: "q3",
+                unit: "S",
+                unitName: "空間與形狀：柱體體積",
+                question: "一個底面積為 25 平方公分，高為 8 公分的圓柱，其體積為多少立方公分？",
+                options: ["100", "150", "200", "400"],
+                correctIndex: 2,
+                explanation: "柱體體積 = 柱高 $\\times$ 柱底面積。$25 \\times 8 = 200$ 立方公分。"
+            },
+            {
+                id: "q4",
+                unit: "R",
+                unitName: "關係：比與比值",
+                question: "六年甲班男生有 15 人，女生有 12 人。請問「女生人數對全班人數」的比值是多少？",
+                options: ["$\\frac{4}{5}$", "$\\frac{5}{4}$", "$\\frac{4}{9}$", "$\\frac{5}{9}$"],
+                correctIndex: 2,
+                explanation: "全班人數為 $15 + 12 = 27$ 人。女生對全班的比為 $12 : 27$，比值為 $\\frac{12}{27} = \\frac{4}{9}$。"
+            },
+            {
+                id: "q5",
+                unit: "A",
+                unitName: "代數：等式與解題",
+                question: "爸爸買了 $x$ 個每個 15 元的奶油餅，付了 100 元，找回 25 元。下列哪一個等式符合題意？",
+                options: ["$15 \\times x + 25 = 100$", "$15 \\times x - 25 = 100$", "$100 - x = 25$", "$100 + 15 \\times x = 25$"],
+                correctIndex: 0,
+                explanation: "花掉的錢 ($15 \\times x$) 加上找回的錢 (25) 會等於原本付的錢 (100)。"
+            },
+            {
+                id: "q6",
+                unit: "N",
+                unitName: "數與量：小數的除法",
+                question: "哥哥有 4.8 公升的果汁，每 0.6 公升裝成一瓶，可以裝成幾瓶？",
+                options: ["6 瓶", "8 瓶", "10 瓶", "12 瓶"],
+                correctIndex: 1,
+                explanation: "被除數與除數同乘10變成整數相除：$4.8 \\div 0.6 = 48 \\div 6 = 8$。"
+            },
+            {
+                id: "q7",
+                unit: "S",
+                unitName: "空間與形狀：圓的面積",
+                question: "圓周率以 3.14 計算，一個直徑 20 公分的圓，其面積為多少平方公分？",
+                options: ["62.8", "314", "1256", "3140"],
+                correctIndex: 1,
+                explanation: "半徑為 $20 \\div 2 = 10$。圓面積 = $10 \\times 10 \\times 3.14 = 314$。"
+            },
+             {
+                id: "q8",
+                unit: "D",
+                unitName: "資料與不確定性：圓餅圖",
+                question: "圖書館統計各類藏書，小說類佔了圓餅圖中 $120^{\\circ}$ 的扇形。請問小說類佔總藏書的幾分之幾？",
+                options: ["$\\frac{1}{2}$", "$\\frac{1}{3}$", "$\\frac{1}{4}$", "$\\frac{1}{5}$"],
+                correctIndex: 1,
+                explanation: "整個圓為 $360^{\\circ}$。$120^{\\circ}$ 佔整體的 $\\frac{120}{360} = \\frac{1}{3}$。"
+            },
+            {
+                id: "q9",
+                unit: "N",
+                unitName: "數與量：速率",
+                question: "一輛汽車 2 小時行駛了 150 公里，這輛汽車的時速是多少公里/小時？",
+                options: ["60", "75", "150", "300"],
+                correctIndex: 1,
+                explanation: "速率 = 距離 $\\div$ 時間 = $150 \\div 2 = 75$ 公里/小時。"
+            },
+            {
+                id: "q10",
+                unit: "R",
+                unitName: "關係：比例尺",
+                question: "一張地圖的比例尺為 $1 : 50000$。地圖上甲、乙兩地的距離是 4 公分，兩地的實際距離是多少公里？",
+                options: ["2", "20", "200", "2000"],
+                correctIndex: 0,
+                explanation: "實際距離 = $4 \\times 50000 = 200000$ 公分。$200000$ 公分 = $2000$ 公尺 = $2$ 公里。"
+            },
+            {
+                id: "q11",
+                unit: "N",
+                unitName: "數與量：質數與質因數",
+                question: "下列哪一個數是 30 的質因數？",
+                options: ["4", "5", "6", "9"],
+                correctIndex: 1,
+                explanation: "30 的因數有 1, 2, 3, 5, 6, 10, 15, 30。其中質數為 2, 3, 5。選項中只有 5 符合。"
+            },
+            {
+                id: "q12",
+                unit: "A",
+                unitName: "代數：解未知數",
+                question: "已知 $y \\div 4 = 12$，那麼 $y$ 的值是多少？",
+                options: ["3", "8", "16", "48"],
+                correctIndex: 3,
+                explanation: "根據等量公理，等號兩邊同乘 4，$y = 12 \\times 4 = 48$。"
+            },
+            {
+                id: "q13",
+                unit: "S",
+                unitName: "空間與形狀：表面積",
+                question: "一個長 5 公分、寬 4 公分、高 2 公分的長方體，其表面積為多少平方公分？",
+                options: ["22", "40", "76", "80"],
+                correctIndex: 2,
+                explanation: "長方體有三對相同的面。表面積 = $(5\\times4 + 5\\times2 + 4\\times2) \\times 2 = (20 + 10 + 8) \\times 2 = 38 \\times 2 = 76$。"
+            },
+            {
+                id: "q14",
+                unit: "R",
+                unitName: "關係：正比",
+                question: "如果 3 瓶鮮奶賣 120 元，那麼買 5 瓶相同的鮮奶需要多少元？",
+                options: ["160", "200", "240", "360"],
+                correctIndex: 1,
+                explanation: "鮮奶瓶數與價格成正比。一瓶鮮奶 $120 \\div 3 = 40$ 元。5 瓶鮮奶 $40 \\times 5 = 200$ 元。"
+            },
+            {
+                id: "q15",
+                unit: "N",
+                unitName: "數與量：基準量與比較量",
+                question: "有一雙球鞋定價 2000 元，現在打八折出售，售價是多少元？",
+                options: ["200", "400", "1600", "2400"],
+                correctIndex: 2,
+                explanation: "打八折表示售價是定價的 $80\\%$ 或 $0.8$。售價 = $2000 \\times 0.8 = 1600$ 元。"
+            }
+        ];
+
+        // --- State Management ---
+        const state = {
+            currentQuiz: [],
+            currentQuestionIndex: 0,
+            userAnswers: [], // Array of selected indices
+            quizResults: null,
+            historyData: []
+        };
+
+        // --- DOM Elements ---
+        const views = {
+            login: document.getElementById('loginView'),
+            mainMenu: document.getElementById('mainMenuView'),
+            quiz: document.getElementById('quizView'),
+            dashboard: document.getElementById('dashboardView')
+        };
+
+        // UI Helpers
+        function showView(viewName) {
+            Object.values(views).forEach(v => v.classList.add('hidden'));
+            views[viewName].classList.remove('hidden');
+        }
+
+        // --- Authentication Logic ---
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const loginError = document.getElementById('loginError');
+        const authLoading = document.getElementById('authLoading');
+        const studentIdInput = document.getElementById('studentId');
+        const passwordInput = document.getElementById('password');
+
+        async function handleAuth() {
+            const sid = studentIdInput.value.trim();
+            const pwd = passwordInput.value.trim();
+
+            if (!sid || !pwd) {
+                loginError.textContent = "請輸入帳號和密碼。";
+                loginError.classList.remove('hidden');
+                return;
+            }
+
+            loginBtn.classList.add('hidden');
+            authLoading.classList.remove('hidden');
+            loginError.classList.add('hidden');
+
+            try {
+                // Determine sign-in method
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                
+                // Note: In a real app, we would query a 'users' collection to verify password.
+                studentProfile = { id: sid, name: sid }; 
+                
+                document.getElementById('welcomeName').textContent = studentProfile.name;
+                showView('mainMenu');
+                
+            } catch (error) {
+                console.error("Auth error:", error);
+                loginError.textContent = "登入系統發生錯誤，請稍後再試。";
+                loginError.classList.remove('hidden');
+            } finally {
+                loginBtn.classList.remove('hidden');
+                authLoading.classList.add('hidden');
+            }
+        }
+
+        loginBtn.addEventListener('click', handleAuth);
+        
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                studentProfile = null;
+                studentIdInput.value = '';
+                passwordInput.value = '';
+                showView('login');
+            } catch (error) {
+                console.error("Logout error", error);
+            }
+        });
+
+
+        // --- Quiz Logic ---
+        const startQuizBtn = document.getElementById('startQuizBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const submitQuizBtn = document.getElementById('submitQuizBtn');
+        const questionContainer = document.getElementById('questionContainer');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const quizProgress = document.getElementById('quizProgress');
+
+        function initQuiz() {
+            // Select questions (for demo, using 10 random questions from pool)
+            state.currentQuiz = [...quizDatabase].sort(() => Math.random() - 0.5).slice(0, 10);
+            state.currentQuestionIndex = 0;
+            state.userAnswers = new Array(state.currentQuiz.length).fill(null);
+            
+            showView('quiz');
+            renderQuestion();
+        }
+
+        // Helper to format math text nicely (basic replacement for visual presentation)
+        function formatMath(text) {
+             return text.replace(/\$(.*?)\$/g, '<span class="font-serif italic font-bold tracking-wide">$1</span>')
+                        .replace(/\\times/g, '×')
+                        .replace(/\\div/g, '÷')
+                        .replace(/\\frac{(\d+)}{(\d+)}/g, '<span class="inline-flex flex-col align-middle text-center text-[0.8em] leading-tight px-1 border-gray-400"><span>$1</span><span class="border-t border-gray-600">$2</span></span>')
+                        .replace(/\^\{\\circ\}/g, '°')
+                        .replace(/\\%/g, '%');
+        }
+
+        function renderQuestion() {
+            const index = state.currentQuestionIndex;
+            const q = state.currentQuiz[index];
+            
+            quizProgress.textContent = `${index + 1} / ${state.currentQuiz.length}`;
+            
+            // Map unit IDs to brand colors for pills
+            const unitColorMap = {
+                'N': 'bg-[#E6F4F5] text-[#0363A7] border border-[#83CCD1]', // Light Blue tint
+                'S': 'bg-[#FDF0E8] text-[#EC6C1F] border border-[#F6AC18]', // Orange tint
+                'R': 'bg-[#FEF7E8] text-[#D49000] border border-[#F6AC18]', // Yellow tint
+                'A': 'bg-[#E5EFF6] text-[#0363A7] border border-[#0363A7]', // Blue tint
+                'D': 'bg-gray-100 text-gray-700 border border-gray-300'
+            };
+            const pillClass = unitColorMap[q.unit] || unitColorMap['D'];
+
+            // Render Question Text
+            questionContainer.innerHTML = `
+                <div class="inline-block ${pillClass} text-xs px-3 py-1 rounded-full mb-4 font-bold shadow-sm">
+                    ${q.unitName}
+                </div>
+                <h3 class="text-xl md:text-2xl font-bold text-gray-800 leading-relaxed tracking-wide">
+                    ${formatMath(q.question)}
+                </h3>
+            `;
+            
+            // Render Options
+            optionsContainer.innerHTML = '';
+            q.options.forEach((opt, i) => {
+                const isSelected = state.userAnswers[index] === i;
+                const optEl = document.createElement('div');
+                optEl.className = `p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 flex items-center shadow-sm
+                    ${isSelected ? 'border-junyi-orange bg-[#FDF0E8]' : 'border-gray-200 bg-white hover:border-junyi-yellow hover:bg-[#FEF7E8]'}`;
+                
+                optEl.innerHTML = `
+                    <div class="w-6 h-6 rounded-full border-2 mr-4 flex flex-shrink-0 items-center justify-center transition-colors
+                        ${isSelected ? 'border-junyi-orange bg-junyi-orange' : 'border-gray-300'}">
+                        ${isSelected ? '<div class="w-2 h-2 bg-white rounded-full"></div>' : ''}
+                    </div>
+                    <span class="text-lg text-gray-700 font-medium">${formatMath(opt)}</span>
+                `;
+                
+                optEl.addEventListener('click', () => {
+                    state.userAnswers[index] = i;
+                    renderQuestion(); // Re-render to show selection
+                });
+                
+                optionsContainer.appendChild(optEl);
+            });
+            
+            // Manage Buttons
+            prevBtn.classList.toggle('hidden', index === 0);
+            
+            if (index === state.currentQuiz.length - 1) {
+                nextBtn.classList.add('hidden');
+                submitQuizBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                submitQuizBtn.classList.add('hidden');
+            }
+        }
+
+        prevBtn.addEventListener('click', () => {
+            if (state.currentQuestionIndex > 0) {
+                state.currentQuestionIndex--;
+                renderQuestion();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (state.currentQuestionIndex < state.currentQuiz.length - 1) {
+                state.currentQuestionIndex++;
+                renderQuestion();
+            }
+        });
+
+        startQuizBtn.addEventListener('click', initQuiz);
+
+
+        // --- Submit and Save Results ---
+        submitQuizBtn.addEventListener('click', async () => {
+            // Check if all answered
+            const unanswered = state.userAnswers.findIndex(ans => ans === null);
+            if (unanswered !== -1) {
+                // Mock confirm bypassing alert
+                const proceed = true; // In real implementation, show a custom modal
+                if (!proceed) {
+                    state.currentQuestionIndex = unanswered;
+                    renderQuestion();
+                    return;
+                }
+            }
+
+            calculateAndSaveResults();
+        });
+
+        async function calculateAndSaveResults() {
+            submitQuizBtn.disabled = true;
+            submitQuizBtn.innerHTML = '<span class="spinner inline-block w-4 h-4 border-2 mr-2"></span>處理中...';
+
+            let correctCount = 0;
+            const unitStats = {};
+            
+            // Initialize unit stats mapping from the full database structure to ensure all units appear in radar chart
+            const allUnitsMap = {
+                'N': '數與量', 'S': '空間與形狀', 'R': '關係', 'A': '代數', 'D': '資料與不確定性'
+            };
+            
+            for(let key in allUnitsMap) {
+                unitStats[key] = { name: allUnitsMap[key], total: 0, correct: 0 };
+            }
+
+            // Calculate
+            state.currentQuiz.forEach((q, index) => {
+                unitStats[q.unit].total++;
+                if (state.userAnswers[index] === q.correctIndex) {
+                    correctCount++;
+                    unitStats[q.unit].correct++;
+                }
+            });
+
+            const score = Math.round((correctCount / state.currentQuiz.length) * 100);
+            const timestamp = new Date().toISOString();
+
+            const resultData = {
+                score: score,
+                totalQuestions: state.currentQuiz.length,
+                correctAnswers: correctCount,
+                unitStats: unitStats,
+                timestamp: timestamp
+            };
+
+            // Save to Firebase
+            if (auth.currentUser && studentProfile) {
+                try {
+                    const userDocId = `student_${studentProfile.id}`;
+                    const historyRef = collection(db, 'artifacts', appId, 'users', userDocId, 'quiz_history');
+                    await addDoc(historyRef, resultData);
+                } catch (e) {
+                    console.error("Error saving record:", e);
+                }
+            }
+
+            submitQuizBtn.disabled = false;
+            submitQuizBtn.textContent = '提交測驗';
+            
+            // Immediately load dashboard
+            loadDashboardData();
+        }
+
+
+        // --- Dashboard Data Loading and Analysis ---
+        const viewDashboardBtn = document.getElementById('viewDashboardBtn');
+        const backToMenuBtn = document.getElementById('backToMenuBtn');
+        
+        viewDashboardBtn.addEventListener('click', loadDashboardData);
+        backToMenuBtn.addEventListener('click', () => showView('mainMenu'));
+
+        let radarChartInstance = null;
+        let lineChartInstance = null;
+
+        async function loadDashboardData() {
+            showView('dashboard');
+            document.getElementById('dashboardContent').classList.add('hidden');
+            document.getElementById('noDataMessage').classList.add('hidden');
+            document.getElementById('dashboardLoading').classList.remove('hidden');
+
+            if (!auth.currentUser || !studentProfile) return;
+
+            const userDocId = `student_${studentProfile.id}`;
+            const historyRef = collection(db, 'artifacts', appId, 'users', userDocId, 'quiz_history');
+            
+            try {
+                const querySnapshot = await getDocs(query(historyRef));
+                const records = [];
+                querySnapshot.forEach((doc) => {
+                    records.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Sort by date descending
+                records.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                state.historyData = records;
+
+                if (records.length === 0) {
+                    document.getElementById('dashboardLoading').classList.add('hidden');
+                    document.getElementById('noDataMessage').classList.remove('hidden');
+                    return;
+                }
+
+                updateDashboardUI();
+
+            } catch (error) {
+                console.error("Error fetching history:", error);
+                document.getElementById('dashboardLoading').classList.add('hidden');
+            }
+        }
+
+        // --- Dashboard Rendering and Charts ---
+        function updateDashboardUI() {
+            const records = state.historyData;
+            const latest = records[0];
+            
+            // Calculate Averages and Totals
+            let totalScore = 0;
+            const aggUnitStats = {}; 
+            
+            records.forEach(rec => {
+                totalScore += rec.score;
+                for (const [key, data] of Object.entries(rec.unitStats)) {
+                    if (!aggUnitStats[key]) {
+                        aggUnitStats[key] = { name: data.name, total: 0, correct: 0 };
+                    }
+                    aggUnitStats[key].total += data.total;
+                    aggUnitStats[key].correct += data.correct;
+                }
+            });
+
+            const avgScore = Math.round(totalScore / records.length);
+
+            // Update Stats UI
+            document.getElementById('avgScoreDisplay').textContent = avgScore;
+            document.getElementById('quizCountDisplay').textContent = records.length;
+            document.getElementById('latestScoreDisplay').textContent = latest.score;
+            document.getElementById('latestScoreDisplay').className = `text-2xl font-black ${latest.score >= 80 ? 'text-[#0363A7]' : latest.score >= 60 ? 'text-[#EC6C1F]' : 'text-red-600'}`;
+
+            // Prepare Chart Data
+            const radarLabels = [];
+            const radarData = [];
+            let weakestUnit = { name: '', rate: 100, key: '' };
+
+            for (const [key, data] of Object.entries(aggUnitStats)) {
+                radarLabels.push(data.name);
+                // If a unit has never been tested, treat as 100 to avoid skewing advice, or 0 visually
+                const rate = data.total > 0 ? (data.correct / data.total) * 100 : 100; 
+                radarData.push(data.total > 0 ? Math.round(rate) : 0); // show 0 on graph
+                
+                if (data.total > 0 && rate < weakestUnit.rate) {
+                    weakestUnit = { name: data.name, rate: rate, key: key };
+                }
+            }
+
+            // Generate AI Advice
+            generateAdvice(weakestUnit, latest.score);
+
+            // Render Charts
+            renderRadarChart(radarLabels, radarData);
+            renderLineChart(records);
+            renderHistoryTable(records);
+
+            document.getElementById('dashboardLoading').classList.add('hidden');
+            document.getElementById('dashboardContent').classList.remove('hidden');
+        }
+
+        function generateAdvice(weakest, latestScore) {
+            const adviceBox = document.getElementById('aiAdviceContainer');
+            let html = '';
+
+            // Greeting based on score, using brand colors
+            if (latestScore >= 80) {
+                html += `<p class="font-bold text-junyi-blue mb-2 text-base">太棒了！你的數學基礎概念相當穩固，準備好挑戰進階題了嗎？</p>`;
+            } else if (latestScore >= 60) {
+                html += `<p class="font-bold text-junyi-orange mb-2 text-base">表現不錯！已經掌握了多數觀念，針對弱點稍作補強就會更厲害！</p>`;
+            } else {
+                html += `<p class="font-bold text-gray-700 mb-2 text-base">成績還有進步空間，不要氣餒！均一會陪你一起把基礎打好。</p>`;
+            }
+
+            if (weakest.name) {
+                html += `<p class="mb-3 text-gray-600">根據歷次測驗分析，建議可以優先前往均一教育平台複習 <span class="font-bold text-junyi-blue border-b-2 border-junyi-yellow">「${weakest.name}」</span> 的相關影片與習題。</p>`;
+
+                html += `<div class="mt-4 bg-[#F8FAFC] p-4 rounded-lg border-l-4 border-junyi-blue shadow-sm">`;
+                html += `<div class="flex items-center mb-2"><img src="https://www.junyiacademy.org/favicon.ico" class="w-4 h-4 mr-2 opacity-70"><strong class="text-junyi-blue text-sm">均一小老師的學習指南</strong></div>`;
+                
+                switch(weakest.key) {
+                    case "N":
+                        html += `<p class="text-gray-700 text-sm">數與量的單元（如分數、小數四則運算、因數倍數），關鍵在於<strong>熟悉計算規則與找公因數/公倍數的方法</strong>。建議多利用均一的基礎計算題，反覆練習建立直覺。</p>`;
+                        break;
+                    case "S":
+                        html += `<p class="text-gray-700 text-sm">空間與形狀（如柱體體積、圓面積），<strong>背熟公式是第一步，看懂圖形是第二步</strong>。遇到應用題時，先在旁邊畫個簡圖標示長寬高或半徑，會很有幫助喔！</p>`;
+                        break;
+                    case "R":
+                        html += `<p class="text-gray-700 text-sm">關係單元（比與比例、正反比）的核心觀念是<strong>「同時擴大或縮小」</strong>。找最簡整數比就跟分數約分一樣。建議複習「前項與後項同乘除」的概念影片。</p>`;
+                        break;
+                    case "A":
+                        html += `<p class="text-gray-700 text-sm">代數單元（解未知數）請牢記<strong>「等量公理」</strong>：等號兩邊同時加減乘除同一個數，等式依然成立。就像天平一樣，兩邊做一樣的動作就能慢慢把 $x$ 或 $y$ 找出來。</p>`;
+                        break;
+                    case "D":
+                        html += `<p class="text-gray-700 text-sm">資料與不確定性（如圓餅圖），要記得<strong>整體通常視為 1 或 100%，圓的總角度是 360 度</strong>。利用這兩個基準點，去推算部分佔全體的比例。</p>`;
+                        break;
+                    default:
+                        html += `<p class="text-gray-700 text-sm">請針對錯題重新思考一次，也可以在均一平台上搜尋不熟悉的單元名稱，觀看狐狸貓的教學動畫喔！</p>`;
+                }
+                html += `</div>`;
+                
+                // Add a call to action button linking to Junyi
+                html += `<a href="https://www.junyiacademy.org/topics/remedial-math-grade-6" target="_blank" class="mt-4 inline-block text-sm font-bold text-white bg-junyi-orange hover:bg-[#d65a11] px-4 py-2 rounded shadow-sm transition-colors w-full text-center">前往均一平台複習</a>`;
+            } else {
+                 html += `<p class="mb-3 text-gray-600">目前數據太少，請多做幾次測驗讓我更了解你喔！</p>`;
+            }
+
+            adviceBox.innerHTML = html;
+        }
+
+        // --- Chart.js Rendering ---
+        function renderRadarChart(labels, data) {
+            const ctx = document.getElementById('radarChart').getContext('2d');
+            
+            if (radarChartInstance) radarChartInstance.destroy();
+            
+            radarChartInstance = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '答對率 (%)',
+                        data: data,
+                        backgroundColor: 'rgba(131, 204, 209, 0.4)', // junyi-lightBlue with opacity
+                        borderColor: '#0363A7', // junyi-blue
+                        pointBackgroundColor: '#EC6C1F', // junyi-orange
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#EC6C1F',
+                        borderWidth: 2,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(0, 0, 0, 0.05)' },
+                            grid: { color: 'rgba(0, 0, 0, 0.08)' },
+                            pointLabels: {
+                                font: { family: "'Noto Sans TC', sans-serif", size: 12, weight: 'bold' },
+                                color: '#4b5563'
+                            },
+                            ticks: {
+                                min: 0, max: 100, stepSize: 20,
+                                backdropColor: 'transparent',
+                                color: '#9ca3af',
+                                font: { size: 10 }
+                            }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function renderLineChart(records) {
+            const ctx = document.getElementById('lineChart').getContext('2d');
+            
+            const sortedForChart = [...records].reverse();
+            const labels = sortedForChart.map((r, i) => `第 ${i+1} 回`);
+            const data = sortedForChart.map(r => r.score);
+
+            if (lineChartInstance) lineChartInstance.destroy();
+
+            lineChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '測驗分數',
+                        data: data,
+                        fill: true,
+                        backgroundColor: 'rgba(246, 172, 24, 0.1)', // junyi-yellow with opacity
+                        borderColor: '#F6AC18',
+                        tension: 0.3, // Smoother curve
+                        borderWidth: 3,
+                        pointBackgroundColor: '#EC6C1F', // junyi-orange
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: { color: 'rgba(0, 0, 0, 0.05)', drawBorder: false },
+                            ticks: { color: '#6b7280', font: { weight: 'bold' } }
+                        },
+                        x: {
+                            grid: { display: false, drawBorder: false },
+                            ticks: { color: '#6b7280', font: { weight: 'bold' } }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0363A7',
+                            titleFont: { family: "'Noto Sans TC', sans-serif", size: 13 },
+                            bodyFont: { family: "'Noto Sans TC', sans-serif", size: 14, weight: 'bold' },
+                            padding: 10,
+                            callbacks: {
+                                title: (items) => {
+                                    const index = items[0].dataIndex;
+                                    const date = new Date(sortedForChart[index].timestamp);
+                                    return `${date.toLocaleDateString()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderHistoryTable(records) {
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = '';
+
+            records.forEach((rec, index) => {
+                const date = new Date(rec.timestamp);
+                const dateStr = `${date.getFullYear()}/${(date.getMonth()+1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
+                
+                let weakest = "無";
+                let lowestRate = 100;
+                for(const [key, data] of Object.entries(rec.unitStats)) {
+                    if(data.total > 0) {
+                        const rate = (data.correct / data.total) * 100;
+                        if(rate < lowestRate) {
+                            lowestRate = rate;
+                            weakest = data.name;
+                        }
+                    }
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50 transition-colors";
+                
+                let scoreColor = 'text-red-600 font-bold'; 
+                if (rec.score >= 80) scoreColor = 'text-junyi-blue font-bold'; 
+                else if (rec.score >= 60) scoreColor = 'text-junyi-orange font-bold';
+
+                tr.innerHTML = `
+                    <td class="py-3 px-4 whitespace-nowrap text-gray-600 text-xs">${dateStr}</td>
+                    <td class="py-3 px-4 whitespace-nowrap">
+                        <span class="${scoreColor} text-base">
+                            ${rec.score} 分
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 whitespace-nowrap text-gray-700 font-medium">${weakest}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+    </script>
+</body>
+</html>
